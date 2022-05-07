@@ -63,7 +63,9 @@ public class MainMenuScreen implements MenuProxyIF {
 			createMenuFrame();//instantiate a window object
 			recipes = new Recipes();//a recipe object
 			ingredients = new ArrayList<String>(); //the list of drink ingredients
-
+			/*create the object pool*/
+			popup = ObjectPool.getPoolInstance(poolSize);
+			
 			/*
 			 * read through text file and add each line that has values delimited by "-"
 			 * to their respective fields,then add each of those to recipes to prepopulate
@@ -138,8 +140,7 @@ public class MainMenuScreen implements MenuProxyIF {
 						}//end of if items.get(i)...
 					}//end of for(int i...
 					
-					/*create the object pool*/
-					popup = ObjectPool.getPoolInstance(poolSize);
+
 
                     /* If the number of recipe popup instances is less than the limit we can create more; if not a warning is displayed
                      * SOME REFINEMENTS ARE NEED HERE TO MAKE IT MORE ROBUST AND 100% PREDICTABLE
