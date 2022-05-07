@@ -50,6 +50,12 @@ public class MainMenuScreen implements MenuProxyIF {
 	DefaultListModel<String> defaultListModel = new DefaultListModel<String>();//need access mod?
 	boolean legal = false; //has age been verified?
 
+	Recipe selectedRecipe;
+
+	ObjectPool popup;
+
+	int poolSize = 2; //size of the service object pool; the limit of popup object instances
+
 	/*constructor*/
 	public MainMenuScreen (boolean legal){
         this.legal = legal; //the inbound boolean is the BirthdayChecker.getIfLegal() response
@@ -116,7 +122,7 @@ public class MainMenuScreen implements MenuProxyIF {
 		/*Add a mouse listener that will pull a recipe upon 2 mouse clicks*/
 		recipeList.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent evt){
-				Recipe selectedRec = new Recipe();
+				selectedRecipe = new Recipe(); //Recipe selectedRec = new Recipe();
 				JList<?> list = (JList<?>)evt.getSource(); //replacing explicit cast with ? eliminates the warning
 				if(evt.getClickCount() == 2){
 					ArrayList<Recipe>items = recipes.getItems();
@@ -128,12 +134,24 @@ public class MainMenuScreen implements MenuProxyIF {
 					 */
 					for(int i = 0; i < items.size(); i++){
 							if(items.get(i).getObjectName().contains(list.getModel().getElementAt(index).toString())){
-								selectedRec = items.get(i);
+								selectedRecipe = items.get(i);
 						}//end of if items.get(i)...
 					}//end of for(int i...
-					/*displays selected recipe*/
-					DisplayRecipe displayer = new DisplayRecipe(selectedRec);
-					displayer.showPopup();
+					
+					/*create the object pool*/
+					popup = ObjectPool.getPoolInstance(poolSize);
+
+                    /* If the number of recipe popup instances is less than the limit we can create more; if not a warning is displayed
+                     * SOME REFINEMENTS ARE NEED HERE TO MAKE IT MORE ROBUST AND 100% PREDICTABLE
+                     */
+					if(popup.getInstanceCount() < poolSize ){
+						RecipePopup pop = (RecipePopup) popup.getObject(selectedRecipe); //the returned object must be typed casted to RecipePopup
+						pop.showPopup();
+					}//end of if 
+					else{
+						JOptionPane.showMessageDialog(null, "You are only allowed " + poolSize + " recipe popups."); //a warning dialog when the poolSize is exceeded
+					}//end of else
+
 				}//end of if(evt.getClickCount
 			}//end of mouseClicked
 		}); //end of recipeList.addMouseListener
