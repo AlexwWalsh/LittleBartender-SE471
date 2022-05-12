@@ -51,9 +51,6 @@ public class MainMenuScreen implements MenuProxyIF {
 	boolean legal = false; //has age been verified?
 
 	Recipe selectedRecipe;
-	int poolSize = 2; //size of the service object pool; the limit of popup object instances
-	
-	//ObjectPool popup;
 	PopupManager pm;//
 
 	
