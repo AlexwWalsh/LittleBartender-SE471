@@ -1,16 +1,16 @@
-import java.lang.ref.SoftReference;
+//import java.lang.ref.SoftReference;
 import java.util.*;
 /**
  * Creates an manages a single instance of an Agent object pool
  */
 public class ObjectPool implements ObjectPoolIF {
 
-    private List <Object> pool;
-    private PopupManager pm;
-    private int instanceCount = 0; //The number of pool-managed objects that currently exist.
-    private int maxInstances = 0; //ObjectPool capacity
+    private static ArrayList <Object> pool;
+    private static PopupCreator creator; //
+    private static int instanceCount = 0; //The number of pool-managed objects that currently exist....either in use or in the pool
+    private static int maxInstances = 0; //ObjectPool capacity 
     private static ObjectPool poolInstance; //THE ObjectPool
-
+    
     /*
      * The ObjectPool constructor
      *
@@ -18,10 +18,9 @@ public class ObjectPool implements ObjectPoolIF {
      * @return a new ObjectPool
      */
     private ObjectPool(int max) { //ObjectPool(RecipePopup p, int max)
-        instanceCount = 0;
-        maxInstances = max;
+        setCapacity(max);
         pool = new ArrayList<Object>(maxInstances);
-        setCapacity(maxInstances);
+        
         //this.poolInstance = poolClass;  //do we need this and why
     }//end of constructor
 
@@ -58,7 +57,7 @@ public class ObjectPool implements ObjectPoolIF {
      * @param none
      * @return the number of pool-managed objects that currently exist.
      */
-    public int getInstanceCount(){
+    public int getInstanceCount(){ 
         return instanceCount;
     }//end of getInstanceCount()
 
@@ -68,7 +67,7 @@ public class ObjectPool implements ObjectPoolIF {
      * @param none
      * @return the maximum number of objects that this pool will allow to exist at one time.
      */
-    public int getCapacity(){
+    public int getCapacity(){ //formerly getMaxInstances
         return maxInstances;
     }//end of getCapacity()
 
@@ -98,18 +97,35 @@ public class ObjectPool implements ObjectPoolIF {
      */
     public Object getObject(Recipe r) {
         synchronized (pool) {
-            Object thisObject = removeObject();
+            Object thisObject = reuseObject(r); //try the pool first
             if (thisObject != null) {
-                return thisObject;
-            }
-            if (getInstanceCount() < getCapacity()) {
-                return createObject(r); // not sure if this is correct
+                return thisObject; //if it is a valid item return it
+            } //otherwise if there are no items in the pool yet, create some...
+            else if (getInstanceCount() < getCapacity() ) {//...until capacity has been reached
+                return createObject(r); // 
             } else {
-                return null;
+                return null;//if capacity has been reached, return null and wait for a release 
+                //return null;
             }
         } // end of synchronized()
     }// end of getObject()
+    
 
+    /*
+     * Create an object to be managed by the pool.
+     *
+     * @param none
+     * @return Object
+     */
+    private Object createObject(Recipe r) {
+    	creator = new PopupCreator();
+		Object newObject = creator.create(poolInstance, r);
+		instanceCount++;
+		System.out.println("There be " + getInstanceCount() +  " popups after creation.");
+		
+		return newObject;
+    } // end of createObject()
+    
     /*
      * Return an object from the pool. If there is no object in the pool, one will be created unless
      * the number of pool-managed objects is greater than or equal to the value returned by the getCapacity
@@ -121,61 +137,43 @@ public class ObjectPool implements ObjectPoolIF {
      */
     public Object waitForObject(Recipe r) {
         synchronized (pool) {
-            Object thisObject = removeObject();
+            Object thisObject = reuseObject(r);
             if (thisObject != null) {
-                return thisObject;
+                return thisObject;//if the pool has a valid object grab it
             } // if thisObject
-            if (getInstanceCount() < getCapacity()) {
-                return createObject(r);
-            } else {
+            //if (getInstanceCount() < getCapacity()) {return createObject(r); } 
+            else {
                 do {
                     try {
-                        pool.wait();
+                        pool.wait(500);//this pauses the main thread long enough to close a popup
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    thisObject = removeObject();
-                } while (thisObject == null);
+                    thisObject = reuseObject(r);//otherwise wait for a release, then grab it
+                } while (thisObject != null);
                 return thisObject;
             } // if
         } // synchronized (pool)
     }// end of waitForObject()
 
     /*
-     * Create an object to be managed by the pool.
-     *
-     * @param none
-     * @return Object
-     */
-    private Object createObject(Recipe r) {
-        pm = new PopupManager(this);
-        Object newObject = pm.getPopUp(r);
-        instanceCount++;
-        return newObject;
-    } // end of createObject()
-
-    /*
-     * Remove an object from the pool and return it.
+     * Remove an object from the pool and use it.
      *
      * @param  none
      * @return Object
      */
-    public Object removeObject() {
+    public RecipePopup reuseObject(Recipe r) {
+    	RecipePopup temp;
         while (pool.size() > 0) {
             int lastElem = pool.size() - 1; //index of last item in the pool
-            /*
-             * SoftReferences provide a form of memory-sensitive caching.
-             * Even if they have been tagged for Garbage Collection (GC), a soft reference object (or a softly reachable object)
-             * is spared from GC until the JVM needs to recover memory; before "OutOfMemoryError" is thrown by the JVM.
-             */
-            SoftReference <Object> thisRef = new SoftReference <Object>(pool.remove(lastElem));
-            Object thisObject = thisRef.get();
-            if (thisObject != null) {
-                instanceCount--; //one less instance
-                return thisObject; //return the valid object
-            } // end of if thisObject exists
+            temp = (RecipePopup) pool.remove(lastElem); //cast because ObjectPool doesn't know what it is
+            if (temp != null) {
+                System.out.println("There are " + getInstanceCount() +  " popups after removal.");
+                temp.refreshPanel(r);
+                return temp; //return the valid object
+            } // end of if
         } // end of while loop
-        return null;//no valid object, return null
+        return null;//no valid object yet, return null
     }// end of removeObject()
 
     /*
@@ -184,8 +182,7 @@ public class ObjectPool implements ObjectPoolIF {
      * @param o Object
      * @none
      */
-    public void release(Object o) {
-        // no nulls
+    public void release(Object o) {  	
         if (o == null) {
             throw new NullPointerException();
         } // if null
@@ -194,12 +191,11 @@ public class ObjectPool implements ObjectPoolIF {
             throw new ArrayStoreException(actualClassName);
         } // if isInstance
         synchronized (pool) {
+        	System.out.println("We are releasing a " + o.getClass() + " to the pool.");
             pool.add(o);
-
+            System.out.println("the pool has " + pool.size() +  " popups.");
             // Notify a waiting thread that we have put an object in the pool.
-            pool.notify();
-        } // synchronized
-        instanceCount--; //one less instance
+        } // synchronized      
     }// end of release()
 
     /*

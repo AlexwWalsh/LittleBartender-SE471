@@ -51,10 +51,12 @@ public class MainMenuScreen implements MenuProxyIF {
 	boolean legal = false; //has age been verified?
 
 	Recipe selectedRecipe;
-
-	ObjectPool popup;
-
 	int poolSize = 2; //size of the service object pool; the limit of popup object instances
+	
+	//ObjectPool popup;
+	PopupManager pm;//
+
+	
 
 	/*constructor*/
 	public MainMenuScreen (boolean legal){
@@ -63,9 +65,7 @@ public class MainMenuScreen implements MenuProxyIF {
 			createMenuFrame();//instantiate a window object
 			recipes = new Recipes();//a recipe object
 			ingredients = new ArrayList<String>(); //the list of drink ingredients
-			/*create the object pool*/
-			popup = ObjectPool.getPoolInstance(poolSize);
-			
+
 			/*
 			 * read through text file and add each line that has values delimited by "-"
 			 * to their respective fields,then add each of those to recipes to prepopulate
@@ -140,19 +140,11 @@ public class MainMenuScreen implements MenuProxyIF {
 						}//end of if items.get(i)...
 					}//end of for(int i...
 					
-
-
-                    /* If the number of recipe popup instances is less than the limit we can create more; if not a warning is displayed
-                     * SOME REFINEMENTS ARE NEED HERE TO MAKE IT MORE ROBUST AND 100% PREDICTABLE
-                     */
-					if(popup.getInstanceCount() < poolSize ){
-						RecipePopup pop = (RecipePopup) popup.getObject(selectedRecipe); //the returned object must be typed casted to RecipePopup
-						pop.showPopup();
-					}//end of if 
-					else{
-						JOptionPane.showMessageDialog(null, "You are only allowed " + poolSize + " recipe popups."); //a warning dialog when the poolSize is exceeded
-					}//end of else
-
+					/**********************REVISED***************************/
+					
+					pm = new PopupManager(selectedRecipe); //created a new PopupManager to manage popups	
+					
+					/**********************REVISED***************************/					
 				}//end of if(evt.getClickCount
 			}//end of mouseClicked
 		}); //end of recipeList.addMouseListener

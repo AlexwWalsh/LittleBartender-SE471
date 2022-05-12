@@ -1,4 +1,4 @@
-/*
+/**
  * RecipePopup.java contains all of the javax.swing package components necessary to
  * create the GUI popups that contain individual recipe images ingredients and directions.
  */
@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+//import java.awt.Image;
 import java.awt.Font;
 import java.awt.Color; 
 import java.awt.Dimension;
@@ -22,22 +23,22 @@ public class RecipePopup {
     private JPanel displayRecipe; //removed JPanel recipePanel; not used
     private JButton closeButton; //closes the drink recipe popup
     private ObjectPool op;//This class needs to be familiar with the object pool
-
-    private Recipe r;
+    private Recipe rec;//the recipe
+    private JTextArea textAreaI;//the drink ingredients
+    private JTextArea textAreaD; //the drink mixology
+    private JLabel rName;//the drink name
+    private static JLabel popupPic; //the drink picture
+    private JCheckBox favorite; //THE LAST REFRESH ITEM TO WORK ON
+      
     /*constructor*/
     public RecipePopup(ObjectPool p, Recipe r){
         op = p;
-        this.r = r;
+        this.rec = r;
         createFrame();
-        popupFrame.add(namePanel(r),BorderLayout.NORTH);             // R - Recipe name
-        popupFrame.add(createRecipePanel(r),BorderLayout.CENTER);    // R - Recipe info
+        popupFrame.add(namePanel(rec),BorderLayout.NORTH);             // R - Recipe name
+        popupFrame.add(createRecipePanel(rec),BorderLayout.CENTER);    // R - Recipe info
     }//end of constructor
 
-    public RecipePopup(){
-        createFrame();
-        popupFrame.add(namePanel(r),BorderLayout.NORTH);             // R - Recipe name
-        popupFrame.add(createRecipePanel(r),BorderLayout.CENTER);    // R - Recipe info
-    }//end of constructor
 
     /*creates the underlying window for the recipe popup and sets window properties*/
     private void createFrame(){
@@ -52,7 +53,7 @@ public class RecipePopup {
     /*a panel to hold the name of the recipe at the very top of the display window, with styling*/
     private JPanel namePanel(Recipe r){
         JPanel namePanel = new JPanel();
-        JLabel rName = new JLabel(r.getObjectName()); //GET OBJECT NAME HERE //JLabel rName = new JLabel(r.getObjectName());
+        rName = new JLabel(r.getObjectName()); //GET OBJECT NAME HERE //JLabel rName = new JLabel(r.getObjectName());
         namePanel.setBackground(new Color(40,70,101));
         rName.setFont(new Font("Rockwell", Font.PLAIN, 48));
         rName.setForeground(new Color(240,239,245));
@@ -68,44 +69,63 @@ public class RecipePopup {
         displayRecipe.setLayout(layout);
         displayRecipe.setBackground(new Color(40,70,101));      
         displayRecipe.add(ingredientsPanel(r)); //SET INGREDIENT PANEL HERE
-        displayRecipe.add(directionsPanel(r)); //SET DIRECTIONS PANEL HERE
-        
+        displayRecipe.add(directionsPanel(r)); //SET DIRECTIONS PANEL HERE     
         /*determine which image in the project root to add to a specific recipe; each image is 330x165 in size*/
         popupImage(displayRecipe,r); //GETS THE CORRECT DRINK IMAGE
         displayRecipe.add(bottomPanel(r)); //SET RECIPE IMAGE PANEL HERE
         return displayRecipe;
     }//end of createRecipePanel
     
-    /*switch statements are much better looking than endless ifs*/
+    /*Used strictly for reused popup objects - refreshes the information in the target popup with the data of the passed in recipe*/
+    public void refreshPanel(Recipe r) {
+    	textAreaI.setText("Ingredients:\n" + compileIngredients(r)); //SET INGREDIENT TEXT HERE
+    	textAreaD.setText("Directions:\n" + r.getDirections());
+    	rName.setText(r.getObjectName());
+    	ImageIcon refreshedImage = new ImageIcon(getURL(r));
+    	popupPic.setIcon(refreshedImage);  	
+    }//end of refreshPanel
+        
+    /*sets the PopupPanel Image*/
     private JPanel popupImage(JPanel j, Recipe r){
-        String name = r.getObjectName();
-        switch(name){
-            case "Bloody Mary": j.add(new JLabel(new ImageIcon("./drinkImage_BM.jpg"))); break;
-            case "French 75": j.add(new JLabel(new ImageIcon("./drinkImage_F75.jpg"))); break;
-            case "Fresh Lime Margarita": j.add(new JLabel(new ImageIcon("./drinkImage_FLM.jpg"))); break;
-            case "Gin and Tonic": j.add(new JLabel(new ImageIcon("./drinkImage_GAT.jpg"))); break;
-            case "Irish Coffee": j.add(new JLabel(new ImageIcon("./drinkImage_IC.jpg"))); break;
-            case "Martini": j.add(new JLabel(new ImageIcon("./drinkImage_M.jpg"))); break;
-            case "Mint Julep": j.add(new JLabel(new ImageIcon("./drinkImage_MJ.jpg"))); break;
-            case "Mimosa": j.add(new JLabel(new ImageIcon("./drinkImage_MSA.jpg"))); break;
-            case "Mojito": j.add(new JLabel(new ImageIcon("./drinkImage_MJT.jpg"))); break;
-            case "Pina Colada": j.add(new JLabel(new ImageIcon("./drinkImage_PC.jpg"))); break;
-            case "Pineapple Rum Punch": j.add(new JLabel(new ImageIcon("./drinkImage_PRP.jpg"))); break;
-            case "Red Sangria": j.add(new JLabel(new ImageIcon("./drinkImage_RS.jpg"))); break;
-            case "Screwdriver": j.add(new JLabel(new ImageIcon("./drinkImage_S.jpg"))); break;
-            case "Whiskey Sour": j.add(new JLabel(new ImageIcon("./drinkImage_WS.jpg"))); break;
-            case "White Russian": j.add(new JLabel(new ImageIcon("./drinkImage_WR.jpg"))); break;
-            default: j.add(new JLabel(new ImageIcon("./drinkImage_Placeholder.jpg"))); break;
-        }//end of switch
+        j.add(setPic(getURL(r))); 
       return j;
     }//end of popupImage
+      
+    /*sets the pictures for each drink popup*/
+    public JLabel setPic(String URL) {
+    	ImageIcon image = new ImageIcon(URL);
+    	popupPic = new JLabel(image, JLabel.CENTER);     	
+    	return popupPic;  	
+    }//end of setPic
     
-    
+    /*switch statements are much better looking than endless ifs - getURL does just that*/
+    public String getURL(Recipe r) {
+        String name = r.getObjectName();
+        switch(name){
+            case "Bloody Mary": return "./drinkImage_BM.jpg"; 
+            case "French 75": return "./drinkImage_F75.jpg"; 
+            case "Fresh Lime Margarita": return "./drinkImage_FLM.jpg"; 
+            case "Gin and Tonic": return "./drinkImage_GAT.jpg"; 
+            case "Irish Coffee": return "./drinkImage_IC.jpg"; 
+            case "Martini": return "./drinkImage_M.jpg"; 
+            case "Mint Julep": return "./drinkImage_MJ.jpg"; 
+            case "Mimosa": return "./drinkImage_MSA.jpg"; 
+            case "Mojito": return "./drinkImage_MJT.jpg";
+            case "Pina Colada": return "./drinkImage_PC.jpg";
+            case "Pineapple Rum Punch": return "./drinkImage_PRP.jpg";
+            case "Red Sangria": return "./drinkImage_RS.jpg"; 
+            case "Screwdriver": return "./drinkImage_S.jpg";
+            case "Whiskey Sour": return "./drinkImage_WS.jpg";
+            case "White Russian": return "./drinkImage_WR.jpg";
+            default: return "./drinkImage_Placeholder.jpg"; 
+        }//end of switch 	
+    }//end of getURL
+      
     /*panel to hold recipe ingredients in a text area, with the relevant styling to make it approachable.*/
     private JPanel ingredientsPanel(Recipe r) {
         JPanel ingredientsPanel = new JPanel();
         ingredientsPanel.setBackground(Color.WHITE);
-        JTextArea textAreaI = new JTextArea(3, 1);
+        textAreaI = new JTextArea(3, 1);
         textAreaI.setBackground(new Color(240,239,245));
         Font font = new Font("Bookman Old Style",Font.PLAIN,12);
         textAreaI.setFont(font);
@@ -123,7 +143,7 @@ public class RecipePopup {
     private JPanel directionsPanel(Recipe r){
         JPanel directionsPanel = new JPanel();
         directionsPanel.setBackground(Color.WHITE);
-        JTextArea textAreaD = new JTextArea(3, 10);
+        textAreaD = new JTextArea(3, 10);
         textAreaD.setBackground(new Color(240,239,245));
         Font font = new Font("Bookman Old Style",Font.PLAIN,12);
         textAreaD.setFont(font);
@@ -142,8 +162,8 @@ public class RecipePopup {
         JPanel bottomPanel = new JPanel();
         bottomPanel.setBackground(new Color(40,70,101));
         bottomPanel.setLayout(new BorderLayout());
-        JCheckBox favorite = new JCheckBox("Favorite");
-        
+        favorite = new JCheckBox("Favorite");
+        /*NEED TO MIGRATE FAVORITING FUNCTIONALITY TO  */
 		if (r.getFavorite() == true) { //Set Favorite checkbox depending on r
 			favorite.setSelected(true);
 		} else {
@@ -165,7 +185,7 @@ public class RecipePopup {
         closeButton = new JButton("Close");
         bottomPanel.add(favorite,BorderLayout.CENTER);
         bottomPanel.add(closeButton, BorderLayout.SOUTH);
-        closeButton.addActionListener(new ExitListener(op, this));
+        closeButton.addActionListener(new ExitListener(this));
         return bottomPanel;
     }//end of bottomPanel
     
@@ -194,19 +214,26 @@ public class RecipePopup {
      */
     /*Closes popup on pressing "Close"*/////TO ACTIONLISTENER CLASS???
     private class ExitListener implements ActionListener{
-        private ObjectPool op;
-        RecipePopup r;
-
-        public ExitListener(ObjectPool p, RecipePopup r){
-            op = p;
-            this.r = r;
-        }
+        //private ObjectPool op;
+        RecipePopup rpu;
+        
+        /*constructor*/
+        public ExitListener(RecipePopup r){ rpu = r;}
+        
         public void actionPerformed(ActionEvent e){
             /* on exit press, release the object to the pool and kill the frame*/
-            op.release(this.r);
-            popupFrame.dispose();//will explore alternate closing functions
+        	System.out.println("We are returning a " + rpu.getClass());
+        	popupFrame.setVisible(false);//will explore alternate closing functions
+            //popupFrame.dispose();
+            rpu.returnIt(rpu);
+           
         }//end of actionPerformed()
     }//end of ExitListener class
+    
+    public RecipePopup returnIt(RecipePopup r) {
+    	  op.release(r);
+    	return r;
+    }
     
     /*
      * JAVA EQUIVALENT OF C++ System("pause");
