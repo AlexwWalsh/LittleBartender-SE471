@@ -206,10 +206,15 @@ public class MainMenuScreen implements MenuProxyIF {
 		buttonPanelA.add(buttonViewFaves); 
 		buttonPanelA.add(buttonExit);
 
+		//Action Commands
+		buttonViewList.setActionCommand("ButtonViewList");
+		buttonAddRecipe.setActionCommand("ButtonAddRecipe");
+		buttonViewFaves.setActionCommand("ButtonViewFaves");
+		
 		//Action listeners
-		buttonViewList.addActionListener(new ListButtonListener());
-		buttonAddRecipe.addActionListener(new AddRecipe());
-		buttonViewFaves.addActionListener(new FavoriteButtonListener());
+		buttonViewList.addActionListener(new Observer());
+		buttonAddRecipe.addActionListener(new Observer());
+		buttonViewFaves.addActionListener(new Observer());
 		buttonExit.addActionListener(new ExitListener());	
 		return buttonPanelA;
 	}
@@ -224,8 +229,10 @@ public class MainMenuScreen implements MenuProxyIF {
 		buttonSearchByrecipe = new JButton("Search by Ingredient");
 		buttonPanelB.add(buttonSearchByName);
 		buttonPanelB.add(buttonSearchByrecipe);
-		buttonSearchByName.addActionListener( new NameSearchListener());
-		buttonSearchByrecipe.addActionListener( new IngredientSearchListener());
+		buttonSearchByName.setActionCommand("ButtonSearchByName");
+		buttonSearchByrecipe.setActionCommand("ButtonSearchByRecipe");
+		buttonSearchByName.addActionListener( new Observer());
+		buttonSearchByrecipe.addActionListener( new Observer());
 		return buttonPanelB;
 	}//end of createButtonPanelB
 	
@@ -247,86 +254,61 @@ public class MainMenuScreen implements MenuProxyIF {
 		}	
 	}//end of ExitListener class
 
-	/*
-	 * Gets all recipes currently in the recipes list, initially just
-	 * what is in the text file, then later what is added as well.
-	 */
-	private class ListButtonListener implements ActionListener{
+	private class Observer implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
-			ArrayList<Recipe>items = recipes.getItems();
-			DefaultListModel<String> dList = new DefaultListModel<String>();
-			for(Recipe i : items){
-				dList.addElement(i.getObjectName());
-			}//end of for
-			recipeList.setModel(dList);
-		} //end of actionPerformed()	
-	}//end of ListButtonListener class
-
-	/* Sets recipe objects as favorites*/
-	private class FavoriteButtonListener implements ActionListener{
-		public void actionPerformed(ActionEvent e){
-			ArrayList<Recipe> items = recipes.getItems();
-			DefaultListModel<String> dlist = new DefaultListModel<String>();
-			for(Recipe i : items){
-				if(i.getFavorite() == true){
-					dlist.addElement(i.getObjectName());
-				}//end of if
-			}//end of for
-			recipeList.setModel(dlist);
-		}//end of actionPerformed()
-	}//end of FavoriteButtonListener class
-
-	/*
-	 * Takes the name from the recipe name field and checks the list returned by
-	 * getObjectName from Recipes, and if it is there then adds only the ones with that 
-	 * name to the list model.
-	 */
-	private class NameSearchListener implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-			ArrayList<Recipe>items = recipes.getItems();
-			DefaultListModel<String> dList = new DefaultListModel<String>();
-			for(Recipe i : items){
-				if(i.getObjectName().contains(recipeNameTextField.getText())){
-					dList.addElement(i.getObjectName());	
-				}//end of if
-			}//end of for
-			recipeList.setModel(dList);
-		}//end of actionPerformed()
-	}//end of NameSearchListener class
-
-	/*
-	 * Looks at the ingredient text area and if any of the items returned
-	 * by getItems() contain what is passed, then only those recipes are added to the list model.
-	 */
-	private class IngredientSearchListener implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-			ArrayList<Recipe>items = recipes.getItems();
-			DefaultListModel<String> aList = new DefaultListModel<String>();
-			for(Recipe i : items){
-				if(i.getItems().contains(ingredientTextArea.getText())){
-					aList.addElement(i.getObjectName());
-				}//end of if
-			}//end of for
-			recipeList.setModel(aList);
-		}//end of actionPerformed()
-	}//end of IngredientSearchListener class
-
-	/*
-	 * listens for the add recipe button to be pressed, and when it does passes the text 
-	 * in each of the fields to a recipe object, that is passed into the recipes array.
-	 */
-	private class AddRecipe implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-			Recipe r = new Recipe();
-			r.setObjectName(recipeNameTextField.getText());
-			r.setDirections(directionsTextArea.getText());
-			r.addItem(ingredientTextArea.getText());	
-			recipes.addItem(r);
-			recipeNameTextField.setText("");
-			directionsTextArea.setText("");
-			ingredients.clear();
-		}//end of actionPerformed()		
-	}//end of AddRecipe class
+			String actionCommand = ((JButton) e.getSource()).getActionCommand();
+			switch(actionCommand){
+				case "ButtonViewList":
+					ArrayList<Recipe> items = recipes.getItems();
+					DefaultListModel<String> dList = new DefaultListModel<String>();
+					for(Recipe i : items){
+						dList.addElement(i.getObjectName());
+					}//end of for
+					recipeList.setModel(dList);
+					break;
+				case "ButtonViewFaves":
+					ArrayList<Recipe> items1 = recipes.getItems();
+					DefaultListModel<String> dlist = new DefaultListModel<String>();
+					for(Recipe i : items1){
+						if(i.getFavorite() == true){
+							dlist.addElement(i.getObjectName());
+						}//end of if
+					}//end of for
+					recipeList.setModel(dlist);
+					break;
+				case "ButtonSearchByName":
+					ArrayList<Recipe>items2 = recipes.getItems();
+					DefaultListModel<String> dList1 = new DefaultListModel<String>();
+					for(Recipe i : items2){
+						if(i.getObjectName().contains(recipeNameTextField.getText())){
+							dList1.addElement(i.getObjectName());
+						}//end of if
+					}//end of for
+					recipeList.setModel(dList1);
+					break;
+				case "ButtonSearchByRecipe":
+					ArrayList<Recipe>items3 = recipes.getItems();
+					DefaultListModel<String> aList = new DefaultListModel<String>();
+					for(Recipe i : items3){
+						if(i.getItems().contains(ingredientTextArea.getText())){
+							aList.addElement(i.getObjectName());
+						}//end of if
+					}//end of for
+					recipeList.setModel(aList);
+					break;
+				case "ButtonAddRecipe":
+					Recipe r = new Recipe();
+					r.setObjectName(recipeNameTextField.getText());
+					r.setDirections(directionsTextArea.getText());
+					r.addItem(ingredientTextArea.getText());
+					recipes.addItem(r);
+					recipeNameTextField.setText("");
+					directionsTextArea.setText("");
+					ingredients.clear();
+					break;
+			}
+		}
+	}
 
 	/**
 	 * UTILITY METHODS
