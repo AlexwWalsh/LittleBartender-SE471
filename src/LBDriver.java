@@ -1,3 +1,5 @@
+import javax.swing.*;
+
 /*
  * LBDriver.java - The entry point to LittleBartender. 
  * Age check and drink menu creation is done here.
@@ -11,6 +13,7 @@ public class LBDriver {
 		* The Menu proxy will either grant or reject
 		* access to the Bartender menu
 		*/
+
 		MenuProxy proxy = new MenuProxy();
 		proxy.checkAge();
 	}//end of main

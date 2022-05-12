@@ -8,6 +8,8 @@ import java.util.*;
 import java.nio.file.Paths;
 import javax.swing.*;
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /*
  * MainMenuScreen swing component descriptions:
@@ -22,33 +24,41 @@ import java.awt.Color;
  * JButton - a configurable "push" button that generates an event.
  * DefaultListModel - a simple implementation of ListModel used to manage items displayed by a JList control.
  */
-public class MainMenuScreen implements MenuProxyIF {
-	private JFrame menuFrame;
-	private JList<String> recipeList;
-	private JScrollPane scrollPane;
-	private JScrollPane scrollA;
-	private JScrollPane scrollB;
-	private JPanel borderPanel;
-	private JPanel gridPanel;
-	private JPanel buttonPanelA;
-	private JPanel buttonPanelB;
-	private JLabel recipeNameLabel;
-	private JLabel ingredientNameLabel;
-	private JLabel directionsLabel;
-	private ImageIcon myImage;
-	private JTextField recipeNameTextField;
-	private JTextArea ingredientTextArea;
-	private JTextArea directionsTextArea;
-	private JButton buttonSearchByName;
-	private JButton buttonSearchByrecipe;
-	private JButton buttonViewList;
-	private JButton buttonAddRecipe;
-	private JButton buttonViewFaves;
-	private JButton buttonExit;
-	private Recipes recipes;
-	private ArrayList<String> ingredients;
+public class MainMenuScreen implements MenuProxyIF{
+	public JFrame menuFrame;
+	public JList<String> recipeList;
+	public JScrollPane scrollPane;
+	public JScrollPane scrollA;
+	public JScrollPane scrollB;
+	public JPanel borderPanel;
+	public JPanel gridPanel;
+	public JPanel buttonPanelA;
+	public JPanel buttonPanelB;
+	public JLabel recipeNameLabel;
+	public JLabel ingredientNameLabel;
+	public JLabel directionsLabel;
+	public ImageIcon myImage;
+	public JTextField recipeNameTextField;
+	public JTextArea ingredientTextArea;
+	public JTextArea directionsTextArea;
+	public JButton buttonSearchByName;
+	public JButton buttonSearchByrecipe;
+	public JButton buttonViewList;
+	public JButton buttonAddRecipe;
+	public JButton buttonViewFaves;
+	public JButton buttonExit;
+	public JRadioButton darkButton;
+	public JRadioButton lightButton;
+	public Recipes recipes;
+	public ArrayList<String> ingredients;
 	DefaultListModel<String> defaultListModel = new DefaultListModel<String>();//need access mod?
 	boolean legal = false; //has age been verified?
+
+	Recipe selectedRecipe;
+
+	ObjectPool popup;
+
+	int poolSize = 2; //size of the service object pool; the limit of popup object instances
 
 	/*constructor*/
 	public MainMenuScreen (boolean legal){
@@ -86,7 +96,7 @@ public class MainMenuScreen implements MenuProxyIF {
 	}//end of constructor
 
     /*creates the underlying window for the menu and sets window properties*/
-	private void createMenuFrame(){
+	public void createMenuFrame(){
 		menuFrame = new JFrame();
 		menuFrame.setBounds(706,286,492,500);
 		menuFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -99,7 +109,7 @@ public class MainMenuScreen implements MenuProxyIF {
 	}//end of newFrame
 	
 	/*creates the swing object panel for the underlying window*/
-	private JPanel createBorderPanel(){
+	public JPanel createBorderPanel(){
 		borderPanel = new JPanel();
 		borderPanel.setLayout(new BorderLayout());
 		borderPanel.setBackground(new Color(78,143,175));
@@ -110,13 +120,13 @@ public class MainMenuScreen implements MenuProxyIF {
 		return borderPanel;
 	}//end of createBorderPanel
 	
-	/*this is where the list model on the right side of the menu window is constructed*/ 
-	private JScrollPane createScrollPane(){
+	/*this is where the list model on the right side of the menu window is constructed*/
+	public JScrollPane createScrollPane(){
 		recipeList = new JList<>();
 		/*Add a mouse listener that will pull a recipe upon 2 mouse clicks*/
 		recipeList.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent evt){
-				Recipe selectedRec = new Recipe();
+				selectedRecipe = new Recipe(); //Recipe selectedRec = new Recipe();
 				JList<?> list = (JList<?>)evt.getSource(); //replacing explicit cast with ? eliminates the warning
 				if(evt.getClickCount() == 2){
 					ArrayList<Recipe>items = recipes.getItems();
@@ -128,12 +138,24 @@ public class MainMenuScreen implements MenuProxyIF {
 					 */
 					for(int i = 0; i < items.size(); i++){
 							if(items.get(i).getObjectName().contains(list.getModel().getElementAt(index).toString())){
-								selectedRec = items.get(i);
+								selectedRecipe = items.get(i);
 						}//end of if items.get(i)...
 					}//end of for(int i...
-					/*displays selected recipe*/
-					DisplayRecipe displayer = new DisplayRecipe(selectedRec);
-					displayer.showPopup();
+					
+					/*create the object pool*/
+					popup = ObjectPool.getPoolInstance(poolSize);
+
+                    /* If the number of recipe popup instances is less than the limit we can create more; if not a warning is displayed
+                     * SOME REFINEMENTS ARE NEED HERE TO MAKE IT MORE ROBUST AND 100% PREDICTABLE
+                     */
+					if(popup.getInstanceCount() < poolSize ){
+						RecipePopup pop = (RecipePopup) popup.getObject(selectedRecipe); //the returned object must be typed casted to RecipePopup
+						pop.showPopup();
+					}//end of if 
+					else{
+						JOptionPane.showMessageDialog(null, "You are only allowed " + poolSize + " recipe popups."); //a warning dialog when the poolSize is exceeded
+					}//end of else
+
 				}//end of if(evt.getClickCount
 			}//end of mouseClicked
 		}); //end of recipeList.addMouseListener
@@ -149,7 +171,7 @@ public class MainMenuScreen implements MenuProxyIF {
 	 * components on the LittleBartender window. 
 	 * and sets them to a standard size and formatting.
 	*/
-	private JPanel createGridPanel(){
+	public JPanel createGridPanel(){
 		/*creates the main grid panel*/
 		gridPanel = new JPanel();
         gridPanel.setLayout(new GridLayout(8,1));
@@ -189,11 +211,11 @@ public class MainMenuScreen implements MenuProxyIF {
 
 
 	/*creates a panel at the top to hold the view, add and exit buttons*/
-	private JPanel createButtonPanelA(){
+	public JPanel createButtonPanelA(){
 		buttonPanelA = new JPanel();
 		buttonPanelA.setLayout(new FlowLayout(FlowLayout.LEFT));
 		//Added a new frame to surround buttons
-		buttonPanelA.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder())); 
+		buttonPanelA.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder()));
 		buttonPanelA.setBackground(new Color(40,86,110));
 		buttonViewList = new JButton("View Recipe List");
 		buttonAddRecipe = new JButton("Add Recipe");
@@ -203,112 +225,44 @@ public class MainMenuScreen implements MenuProxyIF {
 		// Add top buttons
         buttonPanelA.add(buttonViewList);
 		buttonPanelA.add(buttonAddRecipe);
-		buttonPanelA.add(buttonViewFaves); 
+		buttonPanelA.add(buttonViewFaves);
 		buttonPanelA.add(buttonExit);
 
-		//Action Commands
 		buttonViewList.setActionCommand("ButtonViewList");
 		buttonAddRecipe.setActionCommand("ButtonAddRecipe");
 		buttonViewFaves.setActionCommand("ButtonViewFaves");
-		
+		buttonExit.setActionCommand("ButtonExit");
 		//Action listeners
 		buttonViewList.addActionListener(new Observer());
 		buttonAddRecipe.addActionListener(new Observer());
 		buttonViewFaves.addActionListener(new Observer());
-		buttonExit.addActionListener(new ExitListener());	
+		buttonExit.addActionListener(new Observer());
 		return buttonPanelA;
 	}
-	
+
 	/*creates a panel at the bottom to hold the search buttons*/
-	private JPanel createButtonPanelB(){    	
+	public JPanel createButtonPanelB(){
 		buttonPanelB = new JPanel();
 		buttonPanelB.setLayout(new FlowLayout(FlowLayout.CENTER));
-		buttonPanelB.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder())); 
+		buttonPanelB.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder()));
 		buttonPanelB.setBackground(new Color(40,86,110));
-		buttonSearchByName = new JButton("Search by Name");		
+		buttonSearchByName = new JButton("Search by Name");
 		buttonSearchByrecipe = new JButton("Search by Ingredient");
+		darkButton = new JRadioButton("Dark Mode");
+		lightButton = new JRadioButton("Light Mode");
 		buttonPanelB.add(buttonSearchByName);
 		buttonPanelB.add(buttonSearchByrecipe);
+		buttonPanelB.add(darkButton);
+		buttonPanelB.add(lightButton);
 		buttonSearchByName.setActionCommand("ButtonSearchByName");
 		buttonSearchByrecipe.setActionCommand("ButtonSearchByRecipe");
 		buttonSearchByName.addActionListener( new Observer());
 		buttonSearchByrecipe.addActionListener( new Observer());
+		//darkButton.addActionListener(new darkModeListener());
+		//lightButton.addActionListener(new lightModeListener());
 		return buttonPanelB;
 	}//end of createButtonPanelB
-	
-	
-	/**
-	 * The 6 nested classes below provide "actions"
-	 * to the various buttons used on the menu screen
-	 * They all implement the swing ActionListener Interface
-	 * and override actionPerformed()
-	 * setModel() sets the model that represents the contents or "value" of the list, 
-	 * notifies property change listeners, and then clears the list's selection.
-	 * NESTED CLASS ARE LEGAL BUT THESE SHOULD BE BROKEN OUT!!
-	 * ACTIONLISTENER CLASS???
-	 */
-	/*Closes program on pressing "exit"*/
-	private class ExitListener implements ActionListener{
-		public void actionPerformed(ActionEvent arg0) {
-			System.exit(0);
-		}	
-	}//end of ExitListener class
 
-	private class Observer implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-			String actionCommand = ((JButton) e.getSource()).getActionCommand();
-			switch(actionCommand){
-				case "ButtonViewList":
-					ArrayList<Recipe> items = recipes.getItems();
-					DefaultListModel<String> dList = new DefaultListModel<String>();
-					for(Recipe i : items){
-						dList.addElement(i.getObjectName());
-					}//end of for
-					recipeList.setModel(dList);
-					break;
-				case "ButtonViewFaves":
-					ArrayList<Recipe> items1 = recipes.getItems();
-					DefaultListModel<String> dlist = new DefaultListModel<String>();
-					for(Recipe i : items1){
-						if(i.getFavorite() == true){
-							dlist.addElement(i.getObjectName());
-						}//end of if
-					}//end of for
-					recipeList.setModel(dlist);
-					break;
-				case "ButtonSearchByName":
-					ArrayList<Recipe>items2 = recipes.getItems();
-					DefaultListModel<String> dList1 = new DefaultListModel<String>();
-					for(Recipe i : items2){
-						if(i.getObjectName().contains(recipeNameTextField.getText())){
-							dList1.addElement(i.getObjectName());
-						}//end of if
-					}//end of for
-					recipeList.setModel(dList1);
-					break;
-				case "ButtonSearchByRecipe":
-					ArrayList<Recipe>items3 = recipes.getItems();
-					DefaultListModel<String> aList = new DefaultListModel<String>();
-					for(Recipe i : items3){
-						if(i.getItems().contains(ingredientTextArea.getText())){
-							aList.addElement(i.getObjectName());
-						}//end of if
-					}//end of for
-					recipeList.setModel(aList);
-					break;
-				case "ButtonAddRecipe":
-					Recipe r = new Recipe();
-					r.setObjectName(recipeNameTextField.getText());
-					r.setDirections(directionsTextArea.getText());
-					r.addItem(ingredientTextArea.getText());
-					recipes.addItem(r);
-					recipeNameTextField.setText("");
-					directionsTextArea.setText("");
-					ingredients.clear();
-					break;
-			}
-		}
-	}
 
 	/**
 	 * UTILITY METHODS
