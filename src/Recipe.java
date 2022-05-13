@@ -1,12 +1,9 @@
 /*
  * Recipe.java ... 
  * It is a (the only??) subclass for ListObject 
- * WHY IS THAT, DO WE NEED THIS!!??
+ * WHY IS THAT, DO WE NEED THIS!!
  * SHOULD THIS BE MERGED WITH Recipes.java???
- * */
-
-//import java.awt.*;//not used; erase?
-//import java.util.*; //not used; erase?
+ */
 
 public class Recipe extends ListObject { //Recipes class vs Recipe class? combine?
 	private String ingredients; //recipe ingredients

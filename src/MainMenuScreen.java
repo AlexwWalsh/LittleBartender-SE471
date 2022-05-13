@@ -50,6 +50,11 @@ public class MainMenuScreen implements MenuProxyIF {
 	DefaultListModel<String> defaultListModel = new DefaultListModel<String>();//need access mod?
 	boolean legal = false; //has age been verified?
 
+	Recipe selectedRecipe;
+	PopupManager pm;//
+
+	
+
 	/*constructor*/
 	public MainMenuScreen (boolean legal){
         this.legal = legal; //the inbound boolean is the BirthdayChecker.getIfLegal() response
@@ -116,7 +121,7 @@ public class MainMenuScreen implements MenuProxyIF {
 		/*Add a mouse listener that will pull a recipe upon 2 mouse clicks*/
 		recipeList.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent evt){
-				Recipe selectedRec = new Recipe();
+				selectedRecipe = new Recipe(); //Recipe selectedRec = new Recipe();
 				JList<?> list = (JList<?>)evt.getSource(); //replacing explicit cast with ? eliminates the warning
 				if(evt.getClickCount() == 2){
 					ArrayList<Recipe>items = recipes.getItems();
@@ -128,12 +133,15 @@ public class MainMenuScreen implements MenuProxyIF {
 					 */
 					for(int i = 0; i < items.size(); i++){
 							if(items.get(i).getObjectName().contains(list.getModel().getElementAt(index).toString())){
-								selectedRec = items.get(i);
+								selectedRecipe = items.get(i);
 						}//end of if items.get(i)...
 					}//end of for(int i...
-					/*displays selected recipe*/
-					DisplayRecipe displayer = new DisplayRecipe(selectedRec);
-					displayer.showPopup();
+					
+					/**********************REVISED***************************/
+					
+					pm = new PopupManager(selectedRecipe); //created a new PopupManager to manage popups	
+					
+					/**********************REVISED***************************/					
 				}//end of if(evt.getClickCount
 			}//end of mouseClicked
 		}); //end of recipeList.addMouseListener
