@@ -1,4 +1,3 @@
-//import java.lang.ref.SoftReference;
 import java.util.*;
 /**
  * Creates an manages a single instance of an Agent object pool
@@ -8,7 +7,7 @@ public class ObjectPool implements ObjectPoolIF {
     private static ArrayList <Object> pool;
     private static PopupCreator creator; //
     private static int instanceCount = 0; //The number of pool-managed objects that currently exist....either in use or in the pool
-    private static int maxInstances = 0; //ObjectPool capacity 
+    private static int maxInstances = 0; //ObjectPool capacity set by poolSize in the Manager class
     private static ObjectPool poolInstance; //THE ObjectPool
     
     /*
@@ -90,9 +89,10 @@ public class ObjectPool implements ObjectPoolIF {
     /*
      * Return an object from the pool. If there is no object in the pool, one will be created unless
      * the number of pool-managed objects is greater than or equal to the value returned by the getCapacity
-     * method. If the number of pool-managed objects exceeds this amount, then this method returns null.
+     * method. If the number of pool-managed objects in use exceeds this amount, then this method returns null.
+     * meaning there are no available objects so waitForObject!
      *
-     * @param none
+     * @param Recipe r
      * @return Object
      */
     public Object getObject(Recipe r) {
@@ -104,8 +104,7 @@ public class ObjectPool implements ObjectPoolIF {
             else if (getInstanceCount() < getCapacity() ) {//...until capacity has been reached
                 return createObject(r); // 
             } else {
-                return null;//if capacity has been reached, return null and wait for a release 
-                //return null;
+                return null;//if capacity has been reached, return null and wait for a release
             }
         } // end of synchronized()
     }// end of getObject()
@@ -113,7 +112,6 @@ public class ObjectPool implements ObjectPoolIF {
 
     /*
      * Create an object to be managed by the pool.
-     *
      * @param none
      * @return Object
      */
@@ -121,15 +119,14 @@ public class ObjectPool implements ObjectPoolIF {
     	creator = new PopupCreator();
 		Object newObject = creator.create(poolInstance, r);
 		instanceCount++;
-		System.out.println("There be " + getInstanceCount() +  " popups after creation.");
-		
+		System.out.println("The number of newly instantiated popups: " + getInstanceCount());
 		return newObject;
     } // end of createObject()
     
     /*
      * Return an object from the pool. If there is no object in the pool, one will be created unless
      * the number of pool-managed objects is greater than or equal to the value returned by the getCapacity
-     * method. If the number of pool-managed objects exceeds this amount, then this method will wait until an
+     * method. If no reuseable objects are available, then this method will wait until an
      * object becomes available for reuse.
      *
      * @param none
@@ -166,11 +163,11 @@ public class ObjectPool implements ObjectPoolIF {
     	RecipePopup temp;
         while (pool.size() > 0) {
             int lastElem = pool.size() - 1; //index of last item in the pool
-            temp = (RecipePopup) pool.remove(lastElem); //cast because ObjectPool doesn't know what it is
+            temp = (RecipePopup) pool.remove(lastElem); //cast because ObjectPool doesn't know what it's pooling
             if (temp != null) {
-                System.out.println("There are " + getInstanceCount() +  " popups after removal.");
-                temp.refreshPanel(r);
-                return temp; //return the valid object
+                System.out.println("Reuseable objects left in the pool: " + pool.size());
+                temp.refreshPanel(r);//populate the reuseable popup with the correct information
+                return temp; //return the updated popup
             } // end of if
         } // end of while loop
         return null;//no valid object yet, return null
@@ -193,7 +190,7 @@ public class ObjectPool implements ObjectPoolIF {
         synchronized (pool) {
         	System.out.println("We are releasing a " + o.getClass() + " to the pool.");
             pool.add(o);
-            System.out.println("the pool has " + pool.size() +  " popups.");
+            System.out.println("Pool objects available: " + pool.size());
             // Notify a waiting thread that we have put an object in the pool.
         } // synchronized      
     }// end of release()

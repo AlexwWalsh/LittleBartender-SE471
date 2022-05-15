@@ -17,5 +17,4 @@ public class ListObject { //removed abstract modifier
 	public void setObjectName(String name) {
 		this.name = name;
 	}//end of setObjectName
-	
 }//end of ListObject class

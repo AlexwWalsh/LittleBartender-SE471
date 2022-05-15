@@ -1,13 +1,11 @@
 /*
- * Recipes.java ...  
- *
- * SHOULD THIS BE MERGED WITH Recipe.java???
- * */
+ * The collection of Recipe objects are managed here
+ */
 import java.util.*;
 //import java.util.Collections; //not used; erase?
 
 public class Recipes {
-	private static ArrayList<Recipe> recipes; //recipes container; should be static
+	public static ArrayList<Recipe> recipes; //recipes container; should be static
 	
 	/*constructor*/
 	public Recipes(){
@@ -18,7 +16,7 @@ public class Recipes {
      * Getters
      */ 
 	/*returns the entire Arraylist of recipes*/
-	public ArrayList<Recipe> getItems() {	
+	public ArrayList<Recipe> getItems() {
 		return recipes;
 	}//end of getItem(s)
 	
@@ -27,13 +25,12 @@ public class Recipes {
 		Recipe item = null;
 		for(Recipe i: recipes){
 			if(i.getObjectName().equals(name)){
-				item=i;
+				item = i;
 			}//end of if
 		}//end of for
 		return item;
 	}//end of getItem
-	
-	
+
     /**
      * Setter
      */

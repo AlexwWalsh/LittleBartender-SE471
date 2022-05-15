@@ -3,15 +3,13 @@
  * create the GUI popups that contain individual recipe images ingredients and directions.
  */
 import javax.swing.*;
-import java.awt.event.*;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
-//import java.awt.Image;
 import java.awt.Font;
 import java.awt.Color; 
 import java.awt.Dimension;
-import javax.swing.JCheckBox; 
-
+import javax.swing.JCheckBox;
+import java.util.ArrayList;
 /*
  * MainMenuScreen swing component descriptions:
  * JFrame - a top-level window with a title and a border; An extended version of java.awt.Frame
@@ -28,7 +26,13 @@ public class RecipePopup {
     private JTextArea textAreaD; //the drink mixology
     private JLabel rName;//the drink name
     private static JLabel popupPic; //the drink picture
-    private JCheckBox favorite; //THE LAST REFRESH ITEM TO WORK ON
+    private JCheckBox favorite; //needs a fix for refreshPanel()
+    private JCheckBox newFavorite; //needs a fix for refreshPanel()
+    private JPanel bottomPanel;
+    ArrayList<Object> group = new ArrayList<Object>(); //holds the group of swing objects used in each action event
+    ActionHandler ah;  //creates a handler object
+    ActionNotifier an; //creates a notifier object
+    ActionAdapter aa; //creates an adapter object
       
     /*constructor*/
     public RecipePopup(ObjectPool p, Recipe r){
@@ -38,7 +42,6 @@ public class RecipePopup {
         popupFrame.add(namePanel(rec),BorderLayout.NORTH);             // R - Recipe name
         popupFrame.add(createRecipePanel(rec),BorderLayout.CENTER);    // R - Recipe info
     }//end of constructor
-
 
     /*creates the underlying window for the recipe popup and sets window properties*/
     private void createFrame(){
@@ -78,12 +81,40 @@ public class RecipePopup {
     
     /*Used strictly for reused popup objects - refreshes the information in the target popup with the data of the passed in recipe*/
     public void refreshPanel(Recipe r) {
+        an = new ActionNotifier();
+        ah = new ActionHandler();
+        aa = new ActionAdapter(ah);
     	textAreaI.setText("Ingredients:\n" + compileIngredients(r)); //SET INGREDIENT TEXT HERE
     	textAreaD.setText("Directions:\n" + r.getDirections());
     	rName.setText(r.getObjectName());
     	ImageIcon refreshedImage = new ImageIcon(getURL(r));
-    	popupPic.setIcon(refreshedImage);  	
+    	popupPic.setIcon(refreshedImage);
+        favorite = refreshFav(r); //assigns a refreshed copy of the checkbox to the checkbox
+        favorite.setSelected(r.getFavorite());//this line is absolutely necessary
+        favorite.setActionCommand("favorite");
+        /*this part handles the object event now*/
+        group.add(favorite);
+        group.add(r);
+        an.addObserver(aa); //registers the ActionAdapter as a receiver of notifications from the ActionNotifier
+        an.notify("favorite",group);//notify passes the pertinent info and object references to perform the action
+        an.removeObserver(aa);
+        group.clear();
     }//end of refreshPanel
+
+    /*
+    * resetFav cuts the reuseable favorite challenge to the bone
+    * Just make a new checkbox identical to the original
+    * assigning it to the original is the way.
+    */
+    public JCheckBox refreshFav(Recipe r){
+        newFavorite = new JCheckBox("Favorite", r.getFavorite());
+        bottomPanel.remove(favorite);
+        bottomPanel.add(newFavorite,BorderLayout.CENTER);
+        newFavorite.setBackground(new Color(40,70,101));
+        newFavorite.setForeground(new Color(240,239,245));
+        newFavorite.setSelected(false);
+        return newFavorite;
+    }//end of resetFav
         
     /*sets the PopupPanel Image*/
     private JPanel popupImage(JPanel j, Recipe r){
@@ -159,44 +190,40 @@ public class RecipePopup {
 
     /*the bottom panel of the view recipe area that holds favoriting functionality*/
     private JPanel bottomPanel(Recipe r){
-        JPanel bottomPanel = new JPanel();
+        an = new ActionNotifier();
+        ah = new ActionHandler();
+        aa = new ActionAdapter(ah);
+        bottomPanel = new JPanel();
         bottomPanel.setBackground(new Color(40,70,101));
         bottomPanel.setLayout(new BorderLayout());
-        favorite = new JCheckBox("Favorite");
-        /*NEED TO MIGRATE FAVORITING FUNCTIONALITY TO  */
-		if (r.getFavorite() == true) { //Set Favorite checkbox depending on r
-			favorite.setSelected(true);
-		} else {
-			favorite.setSelected(false);
-		}
-        favorite.setBackground(new Color(40,70,101));
-        favorite.setForeground(new Color(240,239,245));      
-        favorite.addActionListener(new ActionListener() { //ActionListener would have to be here to access r
-            @Override
-            public void actionPerformed(ActionEvent e){
-                if(favorite.isSelected()){
-                    r.setFavorite();
-                }
-                else{
-                    r.unFavorite();
-                }
-            }
-        });
-        closeButton = new JButton("Close");
+        favorite = new JCheckBox("Favorite", false);
         bottomPanel.add(favorite,BorderLayout.CENTER);
+        favorite.setBackground(new Color(40,70,101));
+        favorite.setForeground(new Color(240,239,245));
+        favorite.setSelected(false);
+        /*this part handles the object event now*/
+        favorite.setActionCommand("favorite");
+        group.add(favorite);
+        group.add(r);
+        an.addObserver(aa); //registers the ActionAdapter as a receiver of notifications from the ActionNotifier
+        an.notify("favorite",group);//notify passes the pertinent info and object references to perform the action
+        an.removeObserver(aa);
+        group.clear();
+
+        closeButton = new JButton("Close");
         bottomPanel.add(closeButton, BorderLayout.SOUTH);
-        closeButton.addActionListener(new ExitListener(this));
+        /*this part handles the object event now*/
+        closeButton.setActionCommand("closeButton");
+        group.add(closeButton);
+        group.add(popupFrame);
+        group.add(this); //RecipePopup foo = this;
+        an.addObserver(aa); //registers the ActionAdapter as a receiver of notifications from the ActionNotifier
+        an.notify("closeButton",group);//notify passes the pertinent info and object references to perform the action
+        an.removeObserver(aa);
+        group.clear();
         return bottomPanel;
     }//end of bottomPanel
-    
-    
-//    /*NEVER USED BUT MAY BE USEFUL LATER*/
-//    private JLabel blankLabel(){
-//        JLabel blank = new JLabel();
-//        blank.setBackground(new Color(40,70,101));
-//        return blank;
-//    }
-    
+
     /*grab all ingredients and put them into the relevant box so that the display can have them*/
     private String compileIngredients(Recipe r){
         String ingredientslist = "";
@@ -208,32 +235,11 @@ public class RecipePopup {
     public void showPopup(){
         popupFrame.setVisible(true);
     }//end of showPopup
-    
-    /**
-     * Another nested class 
-     */
-    /*Closes popup on pressing "Close"*/////TO ACTIONLISTENER CLASS???
-    private class ExitListener implements ActionListener{
-        //private ObjectPool op;
-        RecipePopup rpu;
-        
-        /*constructor*/
-        public ExitListener(RecipePopup r){ rpu = r;}
-        
-        public void actionPerformed(ActionEvent e){
-            /* on exit press, release the object to the pool and kill the frame*/
-        	System.out.println("We are returning a " + rpu.getClass());
-        	popupFrame.setVisible(false);//will explore alternate closing functions
-            //popupFrame.dispose();
-            rpu.returnIt(rpu);
-           
-        }//end of actionPerformed()
-    }//end of ExitListener class
-    
+
     public RecipePopup returnIt(RecipePopup r) {
     	  op.release(r);
     	return r;
-    }
+    } //end of returnIt
     
     /*
      * JAVA EQUIVALENT OF C++ System("pause");

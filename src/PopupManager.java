@@ -1,12 +1,18 @@
 import javax.swing.JOptionPane;
-
 /**
- *  Creates the ObjectPool; Gets popups both new and reusable 
+ *  Creates the ObjectPool. Sets the pool capacity. Gets popups both new and reusable
  */
 public class PopupManager implements PopupManagerIF {
     private static ObjectPool pool;
     private Recipe rp;
-    int poolSize = 2; //only this many new will be created; after this pool only upon release
+
+	/*
+	 * This is the pool size as well as the count of newly created popup objects
+	 * Only this many new popups will be instantiated. Their release builds
+	 * the pool.
+	 * See the header of ObjectPool.getObject() for clarifying info.
+	 */
+    int poolSize = 5;
 
     /*constructor*/
     public PopupManager(Recipe r){

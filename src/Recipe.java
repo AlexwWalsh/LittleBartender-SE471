@@ -1,20 +1,13 @@
 /*
- * Recipe.java ... 
- * It is a (the only??) subclass for ListObject 
- * WHY IS THAT, DO WE NEED THIS!!
- * SHOULD THIS BE MERGED WITH Recipes.java???
+ * Individual Recipe objects are managed here
  */
-
-public class Recipe extends ListObject { //Recipes class vs Recipe class? combine?
+public class Recipe extends ListObject {
 	private String ingredients; //recipe ingredients
 	private String directions; //recipe directions
 	private boolean favoritedStatus; //flagged as favorite recipe
 
     /*constructor*/
-    public Recipe() {
-        ingredients = "";
-		favoritedStatus = false;
-    }//end of  constructor
+    public Recipe() {}//end of  constructor
     
     /**
      * Getters
@@ -40,8 +33,7 @@ public class Recipe extends ListObject { //Recipes class vs Recipe class? combin
 	public boolean getFavorite(){
 		return favoritedStatus;
 	}//end of getFavorite
-	
-		
+
     /**
      * Setters
      */

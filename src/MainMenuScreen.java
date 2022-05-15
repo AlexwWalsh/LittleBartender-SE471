@@ -8,6 +8,7 @@ import java.util.*;
 import java.nio.file.Paths;
 import javax.swing.*;
 import java.awt.Color;
+import java.util.ArrayList;
 
 /*
  * MainMenuScreen swing component descriptions:
@@ -40,27 +41,30 @@ public class MainMenuScreen implements MenuProxyIF {
 	private JTextArea ingredientTextArea;
 	private JTextArea directionsTextArea;
 	private JButton buttonSearchByName;
-	private JButton buttonSearchByrecipe;
+	private JButton buttonSearchByRecipe;
 	private JButton buttonViewList;
 	private JButton buttonAddRecipe;
 	private JButton buttonViewFaves;
 	private JButton buttonExit;
-	private Recipes recipes;
+	public Recipes recipes; //recipes as an Object not a container
 	private ArrayList<String> ingredients;
 	DefaultListModel<String> defaultListModel = new DefaultListModel<String>();//need access mod?
 	boolean legal = false; //has age been verified?
-
 	Recipe selectedRecipe;
 	PopupManager pm;//
 
-	
+	ArrayList<Object> group = new ArrayList<Object>(); //holds the group of swing objects used for an action event
+
+	ActionHandler ah;  //creates a handler object
+	ActionNotifier an; //creates a notifier object
+	ActionAdapter aa; //creates an adapter object
 
 	/*constructor*/
 	public MainMenuScreen (boolean legal){
         this.legal = legal; //the inbound boolean is the BirthdayChecker.getIfLegal() response
 		if(legal) {
 			createMenuFrame();//instantiate a window object
-			recipes = new Recipes();//a recipe object
+			recipes = new Recipes();//a recipes object//
 			ingredients = new ArrayList<String>(); //the list of drink ingredients
 
 			/*
@@ -137,11 +141,11 @@ public class MainMenuScreen implements MenuProxyIF {
 						}//end of if items.get(i)...
 					}//end of for(int i...
 					
-					/**********************REVISED***************************/
+					/**********************REVISED POPUP MAKER***************************/
 					
 					pm = new PopupManager(selectedRecipe); //created a new PopupManager to manage popups	
 					
-					/**********************REVISED***************************/					
+					/**********************REVISED POPUP MAKER***************************/
 				}//end of if(evt.getClickCount
 			}//end of mouseClicked
 		}); //end of recipeList.addMouseListener
@@ -214,13 +218,60 @@ public class MainMenuScreen implements MenuProxyIF {
 		buttonPanelA.add(buttonViewFaves); 
 		buttonPanelA.add(buttonExit);
 
-		//Action listeners
-		buttonViewList.addActionListener(new ListButtonListener());
-		buttonAddRecipe.addActionListener(new AddRecipe());
-		buttonViewFaves.addActionListener(new FavoriteButtonListener());
-		buttonExit.addActionListener(new ExitListener());	
+		/* This section handles the swing object events for the buttons of the main menu top ribbon
+		 * Each button has a set of custom statements specific to its purpose
+		 * Each ActionCommands assigned below will be used in ActionHandler.actionPerformed()
+		 * switch statement to apply the appropriate actions
+		 * Notify passes the pertinent info and object references to perform the action
+		 * group is an ArrayList containing the pertinent info and object references
+		 */
+		an = new ActionNotifier();//see ActionNotifier header to learn why we use this
+		ah = new ActionHandler(); //see ActionNHandler header to learn why we use this
+		aa = new ActionAdapter(ah);//see ActionAdapter header to learn why we use this
+
+		/*The main menu Exit button*/
+		buttonExit.setActionCommand("buttonExit");
+		group.add(buttonExit);
+		an.addObserver(aa);
+		an.notify("buttonExit",group);//notify passes the pertinent info and object references to perform the action
+        an.removeObserver(aa);
+		group.clear();
+
+		/*The main menu View Recipe List button*/
+		buttonViewList.setActionCommand("buttonViewList");
+		group.add(buttonViewList);
+		group.add(recipes);
+		group.add(recipeList);
+		an.addObserver(aa);
+		an.notify("buttonViewList",group);//notify passes the pertinent info and object references to ActionNotify
+		an.removeObserver(aa);
+		group.clear();
+
+		/*The main menu View Favorite Recipes button*/
+		buttonViewFaves.setActionCommand("buttonViewFaves");
+		group.add(buttonViewFaves);
+		group.add(recipes);
+		group.add(recipeList);
+		an.addObserver(aa);
+		an.notify("buttonViewFaves",group);//notify passes the pertinent info and object references to ActionNotify
+		an.removeObserver(aa);
+		group.clear();
+
+		/*The main menu Add Recipe button*/
+		buttonAddRecipe.setActionCommand("buttonAddRecipe");
+		group.add(buttonAddRecipe);
+		group.add(recipeNameTextField);
+		group.add(directionsTextArea);
+		group.add(ingredientTextArea);
+		group.add(recipes);
+		group.add(ingredients);
+		an.addObserver(aa);
+		an.notify("buttonAddRecipe",group);//notify passes the pertinent info and object references to ActionNotify
+		an.removeObserver(aa);
+		group.clear();
+
 		return buttonPanelA;
-	}
+	} //end of createButtonPanelA
 	
 	/*creates a panel at the bottom to hold the search buttons*/
 	private JPanel createButtonPanelB(){    	
@@ -229,112 +280,45 @@ public class MainMenuScreen implements MenuProxyIF {
 		buttonPanelB.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder())); 
 		buttonPanelB.setBackground(new Color(40,86,110));
 		buttonSearchByName = new JButton("Search by Name");		
-		buttonSearchByrecipe = new JButton("Search by Ingredient");
+		buttonSearchByRecipe = new JButton("Search by Ingredient");
 		buttonPanelB.add(buttonSearchByName);
-		buttonPanelB.add(buttonSearchByrecipe);
-		buttonSearchByName.addActionListener( new NameSearchListener());
-		buttonSearchByrecipe.addActionListener( new IngredientSearchListener());
+		buttonPanelB.add(buttonSearchByRecipe);
+
+		/* This section handles the swing object events for the buttons of the main menu bottom ribbon
+		 * Each button has a set of custom statements specific to its purpose
+		 * Each ActionCommands assigned below will be used in ActionHandler.actionPerformed()
+		 * switch statement to apply the appropriate actions
+		 * Notify passes the pertinent info and object references to perform the action
+		 * group is an ArrayList containing the pertinent info and object references
+		 */
+		an = new ActionNotifier();//see ActionNotifier header to learn why we use this
+		ah = new ActionHandler(); //see ActionNHandler header to learn why we use this
+		aa = new ActionAdapter(ah);//see ActionAdapter header to learn why we use this
+
+		/*The main menu Search By Name button*/
+		buttonSearchByName.setActionCommand("buttonSearchByName");
+		group.add(buttonSearchByName);
+		group.add(recipes);
+		group.add(recipeList);
+		group.add(recipeNameTextField);
+		an.addObserver(aa);
+		an.notify("buttonSearchByName",group);//notify passes the pertinent info and object references to ActionNotify
+		an.removeObserver(aa);
+		group.clear();
+
+		/*The main menu Search By Recipe button*/
+		buttonSearchByRecipe.setActionCommand("buttonSearchByRecipe");
+		group.add(buttonSearchByRecipe);
+		group.add(recipes);
+		group.add(recipeList);
+		group.add(ingredientTextArea);
+		an.addObserver(aa);
+		an.notify("buttonSearchByRecipe",group);//notify passes the pertinent info and object references to ActionNotify
+		an.removeObserver(aa);
+		group.clear();
+
 		return buttonPanelB;
 	}//end of createButtonPanelB
-	
-	
-	/**
-	 * The 6 nested classes below provide "actions"
-	 * to the various buttons used on the menu screen
-	 * They all implement the swing ActionListener Interface
-	 * and override actionPerformed()
-	 * setModel() sets the model that represents the contents or "value" of the list, 
-	 * notifies property change listeners, and then clears the list's selection.
-	 * NESTED CLASS ARE LEGAL BUT THESE SHOULD BE BROKEN OUT!!
-	 * ACTIONLISTENER CLASS???
-	 */
-	/*Closes program on pressing "exit"*/
-	private class ExitListener implements ActionListener{
-		public void actionPerformed(ActionEvent arg0) {
-			System.exit(0);
-		}	
-	}//end of ExitListener class
-
-	/*
-	 * Gets all recipes currently in the recipes list, initially just
-	 * what is in the text file, then later what is added as well.
-	 */
-	private class ListButtonListener implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-			ArrayList<Recipe>items = recipes.getItems();
-			DefaultListModel<String> dList = new DefaultListModel<String>();
-			for(Recipe i : items){
-				dList.addElement(i.getObjectName());
-			}//end of for
-			recipeList.setModel(dList);
-		} //end of actionPerformed()	
-	}//end of ListButtonListener class
-
-	/* Sets recipe objects as favorites*/
-	private class FavoriteButtonListener implements ActionListener{
-		public void actionPerformed(ActionEvent e){
-			ArrayList<Recipe> items = recipes.getItems();
-			DefaultListModel<String> dlist = new DefaultListModel<String>();
-			for(Recipe i : items){
-				if(i.getFavorite() == true){
-					dlist.addElement(i.getObjectName());
-				}//end of if
-			}//end of for
-			recipeList.setModel(dlist);
-		}//end of actionPerformed()
-	}//end of FavoriteButtonListener class
-
-	/*
-	 * Takes the name from the recipe name field and checks the list returned by
-	 * getObjectName from Recipes, and if it is there then adds only the ones with that 
-	 * name to the list model.
-	 */
-	private class NameSearchListener implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-			ArrayList<Recipe>items = recipes.getItems();
-			DefaultListModel<String> dList = new DefaultListModel<String>();
-			for(Recipe i : items){
-				if(i.getObjectName().contains(recipeNameTextField.getText())){
-					dList.addElement(i.getObjectName());	
-				}//end of if
-			}//end of for
-			recipeList.setModel(dList);
-		}//end of actionPerformed()
-	}//end of NameSearchListener class
-
-	/*
-	 * Looks at the ingredient text area and if any of the items returned
-	 * by getItems() contain what is passed, then only those recipes are added to the list model.
-	 */
-	private class IngredientSearchListener implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-			ArrayList<Recipe>items = recipes.getItems();
-			DefaultListModel<String> aList = new DefaultListModel<String>();
-			for(Recipe i : items){
-				if(i.getItems().contains(ingredientTextArea.getText())){
-					aList.addElement(i.getObjectName());
-				}//end of if
-			}//end of for
-			recipeList.setModel(aList);
-		}//end of actionPerformed()
-	}//end of IngredientSearchListener class
-
-	/*
-	 * listens for the add recipe button to be pressed, and when it does passes the text 
-	 * in each of the fields to a recipe object, that is passed into the recipes array.
-	 */
-	private class AddRecipe implements ActionListener{
-		public void actionPerformed(ActionEvent e) {
-			Recipe r = new Recipe();
-			r.setObjectName(recipeNameTextField.getText());
-			r.setDirections(directionsTextArea.getText());
-			r.addItem(ingredientTextArea.getText());	
-			recipes.addItem(r);
-			recipeNameTextField.setText("");
-			directionsTextArea.setText("");
-			ingredients.clear();
-		}//end of actionPerformed()		
-	}//end of AddRecipe class
 
 	/**
 	 * UTILITY METHODS
@@ -350,4 +334,14 @@ public class MainMenuScreen implements MenuProxyIF {
     public void showMenu(){
         menuFrame.setVisible(true);
     }//end of showMenu
+
+	/*
+	 * JAVA EQUIVALENT OF C++ System("pause");
+	 * CAN BE USED IN ANY CLASS
+	 */
+	/*FOR DEBUGGING ONLY*/
+	public static void pause() {
+		System.out.println("\nPress Any Key To Continue...");
+		new java.util.Scanner(System.in).nextLine();
+	}//end of pause
 }//end of MainMenu class
